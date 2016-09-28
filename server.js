@@ -4,6 +4,23 @@ const builder = require('botbuilder');
 const restify = require('restify');
 require('dotenv').load();
 
+const passport = require('passport');
+const Strategy = require('passport-oauth').OAuthStrategy;
+passport.use('provider', new Strategy({
+    requestTokenURL: 'https://github.com/login/oauth/authorize?scope=user',
+    accessTokenURL: 'https://github.com/login/oauth/access_token',
+    userAuthorizationURL: 'https://github.com/login/oauth/authorize',
+    consumerKey: process.env.CLIENT_ID,
+    consumerSecret: process.env.CLIENT_SECRET,
+    callbackURL: process.env.REDIRECT_URI
+  },
+  function(token, tokenSecret, profile, done) {
+    User.findOrCreate(function(err, user) {
+      done(err, user);
+    });
+  }
+));
+
 const connector = new builder.ChatConnector();
 const bot = new builder.UniversalBot(connector);
 
