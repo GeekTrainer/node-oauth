@@ -7,12 +7,16 @@ const https = require('https');
 const dialog = new builder.IntentDialog()
     .onDefault([
         (session) => {
-            const url = `https://github.com/login/oauth/authorize?scope=user&client_id=${process.env.CLIENT_ID}&redirect_uri=${querystring.escape(process.env.REDIRECT_URI)}`;
-            const card = new builder.ThumbnailCard(session)
-                                .text('Click to authenticate, then paste the code into the bot')
-                                .tap(new builder.CardAction.openUrl(session, url));
-            session.send(new builder.Message(session).attachments([card]));
-            builder.Prompts.text(session, 'When you receive the code, paste it here to let me know what it is.');
+            if (session.userData.access_token) {
+                session.endDialog(`You're already authenticated`);
+            } else {
+                const url = `https://github.com/login/oauth/authorize?scope=user&client_id=${process.env.CLIENT_ID}&redirect_uri=${querystring.escape(process.env.REDIRECT_URI)}`;
+                const card = new builder.ThumbnailCard(session)
+                    .text('Click to authenticate, then paste the code into the bot')
+                    .tap(new builder.CardAction.openUrl(session, url));
+                session.send(new builder.Message(session).attachments([card]));
+                builder.Prompts.text(session, 'When you receive the code, paste it here to let me know what it is.');
+            }
         },
         (session, result) => {
             const code = result.response;
