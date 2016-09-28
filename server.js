@@ -7,7 +7,7 @@ require('dotenv').load();
 const connector = new builder.ChatConnector();
 const bot = new builder.UniversalBot(connector);
 
-bot.dialog('login', require('./dialogs/oauth.js'));
+bot.dialog('/', require('./dialogs/oauth.js'));
 
 const server = restify.createServer();
 server.use(restify.queryParser());
@@ -18,5 +18,5 @@ server.get('/oauth', (req, res) => {
 });
 
 server.listen(process.env.PORT || process.env.port, () => {
-
+    console.log('listening');
 });
