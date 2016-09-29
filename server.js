@@ -30,6 +30,8 @@ bot.dialog('/', require('./dialogs/oauth.js'));
 
 const server = restify.createServer();
 server.use(restify.queryParser());
+server.use(passport.initialize());
+server.use(restify.bodyParser());
 
 server.post('/api/messages', connector.listen());
 server.get('/oauth', (req, res) => {
