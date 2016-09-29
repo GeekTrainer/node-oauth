@@ -5,18 +5,20 @@ const restify = require('restify');
 require('dotenv').load();
 
 const passport = require('passport');
-const Strategy = require('passport-oauth').OAuthStrategy;
-passport.use('provider', new Strategy({
-    requestTokenURL: 'https://github.com/login/oauth/authorize?scope=user',
-    accessTokenURL: 'https://github.com/login/oauth/access_token',
-    userAuthorizationURL: 'https://github.com/login/oauth/authorize',
-    consumerKey: process.env.CLIENT_ID,
-    consumerSecret: process.env.CLIENT_SECRET,
-    callbackURL: process.env.REDIRECT_URI
-  },
-  function(token, tokenSecret, profile, done) {
-    User.findOrCreate(function(err, user) {
-      done(err, user);
+var GitHubStrategy = require('passport-github2').Strategy;
+passport.use('provider', new GitHubStrategy({
+  clientID: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  callbackURL: process.env.REDIRECT_URI
+},
+  function (token, tokenSecret, profile, done) {
+    process.nextTick(function () {
+
+      // To keep the example simple, the user's GitHub profile is returned to
+      // represent the logged-in user.  In a typical application, you would want
+      // to associate the GitHub account with a user record in your database,
+      // and return that user instead.
+      return done(null, profile);
     });
   }
 ));
@@ -31,9 +33,9 @@ server.use(restify.queryParser());
 
 server.post('/api/messages', connector.listen());
 server.get('/oauth', (req, res) => {
-    res.send(200, `Paste this code into the bot: ${req.query.code}`);
+  res.send(200, `Paste this code into the bot: ${req.query.code}`);
 });
 
 server.listen(process.env.PORT || process.env.port, () => {
-    console.log('listening');
+  console.log('listening');
 });
