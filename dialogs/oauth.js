@@ -10,7 +10,7 @@ const dialog = new builder.IntentDialog()
             if (session.userData.access_token) {
                 session.endDialog(`You're already authenticated`);
             } else {
-                const url = `https://github.com/login/oauth/authorize?scope=user&client_id=${process.env.CLIENT_ID}&redirect_uri=${querystring.escape(process.env.REDIRECT_URI)}`;
+                const url = `http://localhost:3978/login`;
                 const card = new builder.ThumbnailCard(session)
                     .text('Click to authenticate, then paste the code into the bot')
                     .tap(new builder.CardAction.openUrl(session, url));
