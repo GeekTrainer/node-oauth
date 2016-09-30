@@ -2,6 +2,7 @@
 
 const builder = require('botbuilder');
 const restify = require('restify');
+const crypto = require('crypto');
 require('dotenv').load();
 
 const passport = require('passport');
@@ -28,33 +29,42 @@ passport.use('github', new GitHubStrategy({
 
 const connector = new builder.ChatConnector();
 const bot = new builder.UniversalBot(connector);
+const querystring = require('querystring');
 
 bot.dialog('/', require('./dialogs/oauth.js'));
 
+// bot.dialog('/', [
+//   (session, args, next) => {
+//     console.log(querystring.escape(JSON.stringify(session.message.address)));
+//   }
+// ]);
+
 const server = restify.createServer();
 server.use(restify.queryParser());
-server.use(passport.initialize());
 server.use(restify.bodyParser());
+server.use(passport.initialize());
 
 server.get('/login', (req, res, next) => {
-  passport.authenticate('github', {scope: ['user']}, (req, res) => {})(req, res, next);
+  passport.authenticate('github', {scope: ['user'], state: req.query.address}, (req, res) => {})(req, res, next);
 });
 
-server.get(
-  '/oauth',
-  (req, res, next) => {
-    passport.authenticate('github', { failureRedirect: '/login' })(req, res, next);
-    
-  }, 
-  (req, res, next) => {
+server.get('/oauth',
+  passport.authenticate('github', { failureRedirect: '/login' }),
+  (req, res) => {
+    const address = JSON.parse(req.query.state);
 
+    const magicCode = crypto.randomBytes(4).toString('hex');
+    const authCode = req.query.code;
+    const userId = address.user.id;
+    const messageData = { magicCode: magicCode, authCode: authCode, userId: userId };
+
+    let message = new builder.Message().address(address).text(JSON.stringify(messageData));
+    bot.receive(message.toMessage());
+    res.send(`Please enter the code into the bot: ${magicCode}`);
   }
 );
 
 server.post('/api/messages', connector.listen());
-// server.get('/oauth', (req, res) => {
-//   res.send(200, `Paste this code into the bot: ${req.query.code}`);
-// });
 
 server.listen(process.env.PORT || process.env.port, () => {
   console.log('listening');

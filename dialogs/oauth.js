@@ -10,44 +10,24 @@ const dialog = new builder.IntentDialog()
             if (session.userData.access_token) {
                 session.endDialog(`You're already authenticated`);
             } else {
-                const url = `http://localhost:3978/login`;
+                const url = `http://localhost:3978/login?address=${querystring.escape(JSON.stringify(session.message.address))}`;
                 const card = new builder.ThumbnailCard(session)
-                    .text('Click to authenticate, then paste the code into the bot')
+                    .text('Click to authenticate')
                     .tap(new builder.CardAction.openUrl(session, url));
-                session.send(new builder.Message(session).attachments([card]));
-                builder.Prompts.text(session, 'When you receive the code, paste it here to let me know what it is.');
+                builder.Prompts.text(session, new builder.Message(session).attachments([card]));
             }
         },
+        (session, result, next) => {
+            session.userData.codeData = JSON.parse(result.response);
+            builder.Prompts.text(session, 'Please enter the code you received');
+        },
         (session, result) => {
-            const code = result.response;
-
-            const postData = querystring.stringify({
-                'client_id': process.env.CLIENT_ID,
-                'client_secret': process.env.CLIENT_SECRET,
-                'code': code
-            });
-
-            const options = {
-                host: 'github.com',
-                port: 443,
-                path: '/login/oauth/access_token',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Content-Length': Buffer.byteLength(postData)
-                }
-            };
-
-            const authRequest = https.request(options, (response) => {
-                let data = '';
-                response.on('data', (chunk) => data += chunk);
-                response.on('end', () => {
-                    session.userData.access_token = querystring.parse(data).access_token;
-                    session.endDialog('Login successful');
-                });
-            });
-            authRequest.write(postData);
-            authRequest.end();
+            const magicCode = result.response;
+            const userId = session.message.user.id;
+            const codeData = session.userData.codeData;
+            if(codeData.userId === userId && codeData.userId) {
+                session.send('you have been authenticated');
+            }
         }
     ]);
 
