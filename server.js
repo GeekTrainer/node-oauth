@@ -6,6 +6,7 @@ const crypto = require('crypto');
 require('dotenv').load();
 
 const passport = require('passport');
+
 var GitHubStrategy = require('passport-github2').Strategy;
 passport.serializeUser(function(user, done) {
   done(null, user);
@@ -32,12 +33,6 @@ const bot = new builder.UniversalBot(connector);
 const querystring = require('querystring');
 
 bot.dialog('/', require('./dialogs/oauth.js'));
-
-// bot.dialog('/', [
-//   (session, args, next) => {
-//     console.log(querystring.escape(JSON.stringify(session.message.address)));
-//   }
-// ]);
 
 const server = restify.createServer();
 server.use(restify.queryParser());
