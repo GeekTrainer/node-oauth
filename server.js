@@ -7,7 +7,6 @@ require('dotenv').load();
 
 const passport = require('passport');
 
-var GitHubStrategy = require('passport-github2').Strategy;
 passport.serializeUser(function(user, done) {
   done(null, user);
 });
@@ -15,18 +14,22 @@ passport.serializeUser(function(user, done) {
 passport.deserializeUser(function(obj, done) {
   done(null, obj);
 });
-passport.use('github', new GitHubStrategy({
-  clientID: process.env.CLIENT_ID,
-  clientSecret: process.env.CLIENT_SECRET,
-  callbackURL: process.env.REDIRECT_URI
-},
-  function (token, tokenSecret, profile, done) {
-    process.nextTick(function () {
-      console.log('authenticated!!!!!');
-      return done(null, profile);
-    });
-  }
-));
+
+require('./strategies/GitHubStrategy.js').configurePassport(passport);
+
+// const GitHubStrategy = require('passport-github2').Strategy;
+// passport.use('github', new GitHubStrategy({
+//   clientID: process.env.CLIENT_ID,
+//   clientSecret: process.env.CLIENT_SECRET,
+//   callbackURL: process.env.REDIRECT_URI
+// },
+//   function (token, tokenSecret, profile, done) {
+//     process.nextTick(function () {
+//       console.log('authenticated!!!!!');
+//       return done(null, profile);
+//     });
+//   }
+// ));
 
 const connector = new builder.ChatConnector();
 const bot = new builder.UniversalBot(connector);
