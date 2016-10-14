@@ -1,6 +1,7 @@
 {
   "globalDependencies": {
     "node": "registry:dt/node#6.0.0+20161014191813",
+    "passport": "registry:dt/passport#0.2.0+20161013124703",
     "restify": "registry:dt/restify#2.0.0+20160928142801"
   }
 }
