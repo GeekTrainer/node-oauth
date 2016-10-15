@@ -1,57 +1,42 @@
 "use strict";
-
-const builder = require('botbuilder');
-const restify = require('restify');
-const crypto = require('crypto');
 require('dotenv').load();
 
-const passport = require('passport');
+const querystring = require('querystring');
+const builder = require('botbuilder');
+const restify = require('restify');
 
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
+const loginPath = process.env.LOGIN_PATH;
+const redirectPath = process.env.REDIRECT_PATH;
 
-passport.deserializeUser(function(obj, done) {
-  done(null, obj);
-});
-
-require('./strategies/GitHubStrategy.js').configurePassport(passport);
-
-// const GitHubStrategy = require('passport-github2').Strategy;
-// passport.use('github', new GitHubStrategy({
-//   clientID: process.env.CLIENT_ID,
-//   clientSecret: process.env.CLIENT_SECRET,
-//   callbackURL: process.env.REDIRECT_URI
-// },
-//   function (token, tokenSecret, profile, done) {
-//     process.nextTick(function () {
-//       console.log('authenticated!!!!!');
-//       return done(null, profile);
-//     });
-//   }
-// ));
-
+// create bot
 const connector = new builder.ChatConnector();
 const bot = new builder.UniversalBot(connector);
-const querystring = require('querystring');
-
 bot.dialog('/', require('./dialogs/oauth.js'));
 
+// load passport configuration
+const passport = require('./passport-config.js');
+
+// create server
 const server = restify.createServer();
+// add required middleware
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
 server.use(passport.initialize());
 
-server.get('/login', (req, res, next) => {
-  passport.authenticate('github', {scope: ['user'], state: req.query.address}, (req, res) => {})(req, res, next);
+// add login path
+server.get(loginPath, (req, res, next) => {
+  passport.authenticate('github', 
+                        {scope: ['user'], state: req.query.address}, 
+                        (req, res) => {})(req, res, next);
 });
 
-server.get('/oauth',
-  passport.authenticate('github', { failureRedirect: '/login' }),
+// add oauth path
+server.get(redirectPath,
+  passport.authenticate('github', { failureRedirect: loginPath }),
   (req, res) => {
     const address = JSON.parse(req.query.state);
 
-    const magicCode = crypto.randomBytes(4).toString('hex');
+    const magicCode = require('crypto').randomBytes(4).toString('hex');
     const authCode = req.query.code;
     const userId = address.user.id;
     const messageData = { magicCode: magicCode, authCode: authCode, userId: userId };
@@ -62,8 +47,11 @@ server.get('/oauth',
   }
 );
 
-server.post('/api/messages', connector.listen());
+// add bot
+server.post('/api/messages', bot.connector().listen());
 
+// start listening!
 server.listen(process.env.PORT || process.env.port, () => {
+  process.env.HOST = server.url.replace('[::]', 'localhost');
   console.log('listening');
 });

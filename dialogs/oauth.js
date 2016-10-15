@@ -10,7 +10,7 @@ const dialog = new builder.IntentDialog()
             if (session.userData.access_token) {
                 session.endDialog(`You're already authenticated`);
             } else {
-                const url = `http://localhost:3978/login?address=${querystring.escape(JSON.stringify(session.message.address))}`;
+                const url = `${process.env.HOST}${process.env.LOGIN_PATH}?address=${querystring.escape(JSON.stringify(session.message.address))}`;
                 const card = new builder.ThumbnailCard(session)
                     .text('Click to authenticate')
                     .tap(new builder.CardAction.openUrl(session, url));
@@ -25,8 +25,10 @@ const dialog = new builder.IntentDialog()
             const magicCode = result.response;
             const userId = session.message.user.id;
             const codeData = session.userData.codeData;
-            if(codeData.userId === userId && codeData.userId) {
+            if(codeData.userId === userId && codeData.magicCode === magicCode) {
                 session.send('you have been authenticated');
+            } else {
+                session.send('That number does not look correct.');
             }
         }
     ]);
